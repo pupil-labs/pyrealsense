@@ -586,7 +586,7 @@ class DeviceBase(object):
 
     def __str__(self):
         return '{}(serial={}, firmware={})'.format(self.__class__.__name__,
-                                                   self.serial, self.firmware)
+                                                   self.serial, self.version)
 
     def __nonzero__(self):
         return self.is_streaming()
