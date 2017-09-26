@@ -2,7 +2,8 @@
 
 #include "rs.h"
 #include "rsutil.h"
-
+#include <cmath>
+#include <stdio.h>
 
 void _apply_depth_control_preset(rs_device * device, int preset)
 {
@@ -33,6 +34,44 @@ void _deproject_pixel_to_point(float point[],
 }
 
 
+
+void _project_pointcloud_to_pixel(uint8_t *image,
+								  const struct rs_intrinsics *depth_intrin,
+								  const struct rs_intrinsics *color_intrin,
+								  const struct rs_extrinsics *depth_to_color_extrin,
+	                              float *pointcloud,
+	                              uint8_t *color_image)
+{
+    for (int dy = 0; dy < depth_intrin->height; ++dy)
+	{
+		for (int dx = 0; dx < depth_intrin->width; ++dx)
+		{
+			float color_point[3];
+			float pixel[2];
+
+			rs_transform_point_to_point(color_point, depth_to_color_extrin, &pointcloud[(depth_intrin->width * dy + dx) * 3]);
+			rs_project_point_to_pixel(pixel, color_intrin, color_point);
+
+			// Use the color from the nearest color pixel, or pure white if this point falls outside the color image
+			const int cx = (int)std::round(pixel[0]), cy = (int)std::round(pixel[1]);
+            if (cx < 0 || cy < 0 || cx >= color_intrin->width || cy >= color_intrin->height)
+			{
+				*image++ = 255;
+				*image++ = 255;
+				*image++ = 255;
+			}
+			else
+			{
+				uint8_t *src = color_image + (cy * color_intrin->width + cx) * 3;
+				*image++ = *(src+2);
+				*image++ = *(src+1);
+				*image++ = *src;
+			}
+
+		}
+	}
+}
+
 void _deproject_depth(float pointcloud[],
                       const struct rs_intrinsics * intrin,
                       const uint16_t depth_image[],
@@ -60,3 +99,9 @@ void _deproject_depth(float pointcloud[],
     }
 }
 
+void _transform_point_to_point(float* to_point,
+    const rs_extrinsics * extrin,
+    const float* from_point)
+{
+    rs_transform_point_to_point(to_point, extrin, from_point);
+}
