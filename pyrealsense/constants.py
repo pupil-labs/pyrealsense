@@ -62,7 +62,8 @@ for c in ast.ext:
                   'rs_format',
                   'rs_distortion',
                   'rs_ivcam_preset',
-                  'rs_option']:
+                  'rs_option',
+                  'rs_preset']:
         e = _get_enumlist(c)
 
         class_name = c.name
