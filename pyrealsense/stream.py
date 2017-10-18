@@ -18,7 +18,7 @@ class Stream(object):
         format (int): from :class:`pyrealsense.constants.rs_format`
         fps (int): fps
     """
-    def __init__(self, name, native, stream, width, height, format, fps):
+    def __init__(self, name, native, stream, width, height, format, fps, preset = None):
         super(Stream, self).__init__()
         self.name = name
         self.native = native
@@ -27,12 +27,13 @@ class Stream(object):
         self.width = width
         self.height = height
         self.fps = fps
+        self.preset = preset
 
 
 class ColorStream(Stream):
     """Color stream from device, with default parameters.
     """
-    def __init__(self, name='color', width=640, height=480, fps=30, color_format='rgb'):
+    def __init__(self, name='color', width=640, height=480, fps=30, color_format='rgb', preset=None):
         self.native = True
         self.stream = rs_stream.RS_STREAM_COLOR
         if color_format == 'rgb':
@@ -48,19 +49,19 @@ class ColorStream(Stream):
             raise ValueError('Unknown color format. Expected rgb, bgr, or yuv ({} given)').format(color_format)
         self.shape = (height, width, n_channels)
         self.dtype = ctypes.c_uint8
-        super(ColorStream, self).__init__(name, self.native, self.stream, width, height, self.format, fps)
+        super(ColorStream, self).__init__(name, self.native, self.stream, width, height, self.format, fps, preset)
 
 
 class DepthStream(Stream):
     """Depth stream from device, with default parameters.
     """
-    def __init__(self, name='depth', width=640, height=480, fps=30):
+    def __init__(self, name='depth', width=640, height=480, fps=30, preset=None):
         self.native = True
         self.stream = rs_stream.RS_STREAM_DEPTH
         self.format = rs_format.RS_FORMAT_Z16
         self.shape = (height, width)
         self.dtype = ctypes.c_uint16
-        super(DepthStream, self).__init__(name, self.native, self.stream, width, height, self.format, fps)
+        super(DepthStream, self).__init__(name, self.native, self.stream, width, height, self.format, fps, preset)
 
 
 class PointStream(Stream):

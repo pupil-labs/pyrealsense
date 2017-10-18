@@ -12,7 +12,7 @@ import ctypes
 import numpy as np
 from numpy.ctypeslib import ndpointer
 
-from .constants import RS_API_VERSION, rs_stream, rs_option
+from .constants import RS_API_VERSION, rs_stream, rs_option, rs_format
 from .stream import ColorStream, DepthStream, PointStream, CADStream, DACStream, InfraredStream
 from .extstruct import rs_error, rs_intrinsics, rs_extrinsics, rs_context, rs_device
 from .utils import pp, _check_error, RealsenseError, StreamMode, DeviceOptionRange
@@ -195,9 +195,29 @@ def Device(service, device_id=0, streams=None, depth_control_preset=None, ivcam_
     # enable the stream and start device
     for s in streams:
         if s.native:
-            lrs.rs_enable_stream(dev, s.stream, s.width, s.height, s.format, s.fps, ctypes.byref(e))
-            _check_error(e)
-
+            if s.preset is None:
+                lrs.rs_enable_stream(dev, s.stream, s.width, s.height, s.format, s.fps, ctypes.byref(e))
+            else:
+                lrs.rs_enable_stream_preset(dev, s.stream, s.preset, ctypes.byref(e))
+                width = lrs.rs_get_stream_width(dev, s.stream, ctypes.byref(e))
+                _check_error(e)
+                height = lrs.rs_get_stream_height(dev, s.stream, ctypes.byref(e))
+                _check_error(e)
+                format = lrs.rs_get_stream_format(dev, s.stream, ctypes.byref(e))
+                _check_error(e)
+                fps = lrs.rs_get_stream_framerate(dev, s.stream, ctypes.byref(e))
+                _check_error(e)
+                if s.stream == rs_stream.RS_STREAM_COLOR:
+                    color_format = ''
+                    if format == rs_format.RS_FORMAT_RGB8:
+                        color_format = 'rgb'
+                    if format == rs_format.RS_FORMAT_BGR8:
+                        color_format = 'bgr'
+                    if format == rs_format.RS_FORMAT_YUYV:
+                        color_format = 'yuv'
+                    s.__init__('color', width, height, fps, color_format, s.preset)
+                elif s.stream == rs_stream.RS_STREAM_DEPTH:
+                    s.__init__('depth', width, height, fps, s.preset)
     lrs.rs_start_device(dev, ctypes.byref(e))
 
     # depth control preset
